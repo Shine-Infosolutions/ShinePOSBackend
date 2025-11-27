@@ -1,0 +1,18 @@
+const express = require('express');
+const router = express.Router();
+const { 
+  createAndApplyNOC, 
+  getAllNOCs, 
+  getNOCById, 
+  updateNOC, 
+  deleteNOC, 
+} = require('../controllers/nocController');
+
+// Simple NOC routes
+router.post('/create', createAndApplyNOC);
+router.get('/all', getAllNOCs);
+router.get('/:id', getNOCById);
+router.put('/update/:id', updateNOC);
+router.delete('/delete/:id', deleteNOC);
+
+module.exports = router;
