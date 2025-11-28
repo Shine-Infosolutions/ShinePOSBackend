@@ -1,4 +1,4 @@
-const RestaurantInvoice = require('../models/RestaurantInvoice');
+const RestaurantInvoice = require('../models/restaurantModels/RestaurantInvoice');
 
 // Create or update restaurant invoice
 const saveRestaurantInvoice = async (req, res) => {

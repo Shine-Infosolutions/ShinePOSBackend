@@ -1,5 +1,5 @@
-const Table = require('../models/Table');
-const RestaurantOrder = require('../models/RestaurantOrder');
+const Table = require('../models/restaurantModels/Table');
+const RestaurantOrder = require('../models/restaurantModels/RestaurantOrder');
 
 // Get all tables
 exports.getAllTables = async (req, res) => {

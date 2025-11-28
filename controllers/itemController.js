@@ -1,4 +1,4 @@
-const Item = require('../models/Items');
+const Item = require('../models/restaurantModels/Items');
 
 const itemController = {
   getAllItems: async (req, res) => {

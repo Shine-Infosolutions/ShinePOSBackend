@@ -1,7 +1,7 @@
-const KOT = require('../models/KOT');
-const RestaurantOrder = require('../models/RestaurantOrder');
-const Item = require('../models/Items');
-const Notification = require('../models/Notification');
+const KOT = require('../models/restaurantModels/KOT');
+const RestaurantOrder = require('../models/restaurantModels/RestaurantOrder');
+const Item = require('../models/restaurantModels/Items');
+const Notification = require('../models/restaurantModels/Notification');
 
 // Generate KOT number
 const generateKOTNumber = async () => {

@@ -1,4 +1,4 @@
-const RestaurantReservation = require("../models/RestaurantReservation");
+const RestaurantReservation = require("../models/restaurantModels/RestaurantReservation");
 
 const generateReservationNumber = async () => {
   const today = new Date();

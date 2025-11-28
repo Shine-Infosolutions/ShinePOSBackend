@@ -1,9 +1,9 @@
-const RestaurantOrder = require("../models/RestaurantOrder");
-const Item = require("../models/Items");
-const KOT = require("../models/KOT");
-const Bill = require("../models/Bill");
-const Table = require("../models/Table");
-const NOC = require("../models/NOC");
+const RestaurantOrder = require("../models/restaurantModels/RestaurantOrder");
+const Item = require("../models/restaurantModels/Items");
+const KOT = require("../models/restaurantModels/KOT");
+const Bill = require("../models/restaurantModels/Bill");
+const Table = require("../models/restaurantModels/Table");
+const NOC = require("../models/restaurantModels/NOC");
 
 // Generate KOT number
 const generateKOTNumber = async () => {
@@ -421,7 +421,7 @@ exports.updateOrderStatus = async (req, res) => {
     
     // If order is cancelled, also cancel all associated KOTs
     if (status === 'cancelled') {
-      const KOT = require('../models/KOT');
+      const KOT = require('../models/restaurantModels/KOT');
       await KOT.updateMany(
         { orderId: order._id },
         { status: 'cancelled' }

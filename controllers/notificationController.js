@@ -1,5 +1,5 @@
-const Notification = require('../models/Notification');
-const RestaurantOrder = require('../models/RestaurantOrder');
+const Notification = require('../models/restaurantModels/Notification');
+const RestaurantOrder = require('../models/restaurantModels/RestaurantOrder');
 
 // Send notification when order is ready
 exports.sendOrderReadyNotification = async (req, res) => {
