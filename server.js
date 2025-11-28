@@ -8,17 +8,6 @@ connectDB();
 app.use(express.json());
 
 app.use("/api/auth", require("./routes/authRoutes/authRoutes"));
-app.use("/api/bill", require("./routes/billRoutes"));
-app.use("/api/item", require("./routes/itemRoutes"));
-app.use("/api/item-category", require("./routes/itemCategoryRoutes"));
-app.use("/api/kot", require("./routes/kotRoutes"));
-app.use("/api/noc", require("./routes/nocRoutes"));
-app.use("/api/notification", require("./routes/notificationRoutes"));
-app.use("/api/invoice", require("./routes/restaurantInvoiceRoutes"));
-app.use("/api/order", require("./routes/restaurantOrderRoutes"));
-app.use("/api/reservation", require("./routes/restaurantReservationRoutes"));
-app.use("/api/table", require("./routes/tableRoutes"));
-app.use("/api/wastage", require("./routes/wastageRoutes"));
 app.use("/api/bill", require("./routes/restaurant/billRoutes"));
 app.use("/api/item", require("./routes/restaurant/itemRoutes"));
 app.use("/api/item-category", require("./routes/restaurant/itemCategoryRoutes"));
