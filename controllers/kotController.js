@@ -1,7 +1,7 @@
-const KOT = require('../models/KOT');
-const RestaurantOrder = require('../models/RestaurantOrder');
-const Item = require('../models/Items');
-const Notification = require('../models/Notification');
+const KOT = require('../models/restaurantModels/KOT');
+const RestaurantOrder = require('../models/restaurantModels/RestaurantOrder');
+const Item = require('../models/restaurantModels/Items');
+const Notification = require('../models/restaurantModels/Notification');
 
 // Generate KOT number
 const generateKOTNumber = async () => {
@@ -103,11 +103,12 @@ exports.getAllKOTs = async (req, res) => {
     
     const kots = await KOT.find(filter)
       .populate('items.itemId', 'name')
-      .populate('createdBy', 'username')
-      .populate('assignedChef', 'username')
-      .sort({ createdAt: -1 });
+      .select('kotNumber tableNo items status priority estimatedTime createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+      
     const kotsWithDisplayNumber = kots.map(kot => ({
-      ...kot.toObject(),
+      ...kot,
       displayNumber: getKOTDisplayNumber(kot.kotNumber)
     }));
     res.json(kotsWithDisplayNumber);
@@ -116,19 +117,28 @@ exports.getAllKOTs = async (req, res) => {
   }
 };
 
-// Update KOT status
+// Update KOT status with timing
 exports.updateKOTStatus = async (req, res) => {
   try {
     const { status, actualTime, assignedChef } = req.body;
-    const updates = { status };
+    const updates = { 
+      status,
+      statusUpdatedAt: new Date()
+    };
     
     if (actualTime) updates.actualTime = actualTime;
     if (assignedChef) updates.assignedChef = assignedChef;
     
+    // Auto-calculate actual time if status is completed
+    if (status === 'completed' && !actualTime) {
+      const kot = await KOT.findById(req.params.id);
+      if (kot) {
+        updates.actualTime = Math.floor((new Date() - new Date(kot.createdAt)) / 60000);
+      }
+    }
+    
     const kot = await KOT.findByIdAndUpdate(req.params.id, updates, { new: true })
-      .populate('items.itemId', 'name')
-      .populate('createdBy', 'username')
-      .populate('assignedChef', 'username');
+      .populate('items.itemId', 'name');
     if (!kot) return res.status(404).json({ error: 'KOT not found' });
     
     // 🔥 WebSocket: Emit KOT status update
@@ -161,7 +171,7 @@ exports.updateKOTStatus = async (req, res) => {
       
       if (order && order.createdBy) {
         const notification = new Notification({
-          recipient: order.createdBy._id,
+          recipient: order.createdBy,
           message: `Order for Table ${kot.tableNo} is ready for serving`,
           type: 'order_ready',
           orderId: kot.orderId,
@@ -186,9 +196,7 @@ exports.getKOTById = async (req, res) => {
   try {
     const kot = await KOT.findById(req.params.id)
       .populate('orderId')
-      .populate('items.itemId', 'name Price')
-      .populate('createdBy', 'username')
-      .populate('assignedChef', 'username');
+      .populate('items.itemId', 'name Price');
     if (!kot) return res.status(404).json({ error: 'KOT not found' });
     res.json({
       ...kot.toObject(),
@@ -258,9 +266,7 @@ exports.updateItemStatuses = async (req, res) => {
 exports.updateKOT = async (req, res) => {
   try {
     const kot = await KOT.findByIdAndUpdate(req.params.id, req.body, { new: true })
-      .populate('items.itemId', 'name')
-      .populate('createdBy', 'username')
-      .populate('assignedChef', 'username');
+      .populate('items.itemId', 'name');
     if (!kot) return res.status(404).json({ error: 'KOT not found' });
     res.json({
       ...kot.toObject(),

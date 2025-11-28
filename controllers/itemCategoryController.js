@@ -1,4 +1,4 @@
-const ItemCategory = require('../models/ItemCategory.js');
+const ItemCategory = require('../models/restaurantModels/ItemCategory');
 
 // Create a new item category
 exports.createItemCategory = async (req, res) => {

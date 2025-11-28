@@ -1,4 +1,4 @@
-const NOC = require('../models/NOC');
+const NOC = require('../models/restaurantModels/NOC');
 
 // Create NOC (Simple checkbox approach)
 const createAndApplyNOC = async (req, res) => {

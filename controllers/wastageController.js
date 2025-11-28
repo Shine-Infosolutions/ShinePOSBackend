@@ -1,4 +1,4 @@
-const Wastage = require("../models/Wastage");
+const Wastage = require("../models/restaurantModels/Wastage");
 
 // Create wastage record
 exports.createWastage = async (req, res) => {

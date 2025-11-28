@@ -1,6 +1,6 @@
-const Bill = require('../models/Bill');
-const RestaurantOrder = require('../models/RestaurantOrder');
-const RestaurantReservation = require('../models/RestaurantReservation');
+const Bill = require('../models/restaurantModels/Bill');
+const RestaurantOrder = require('../models/restaurantModels/RestaurantOrder');
+const RestaurantReservation = require('../models/restaurantModels/RestaurantReservation');
 
 // Generate bill number
 const generateBillNumber = async () => {
@@ -54,7 +54,7 @@ exports.createBill = async (req, res) => {
       advancePayment: advanceAmount,
       remainingAmount,
       paymentMethod,
-      cashierId: req.user?.id || req.user?._id
+      cashierId: req.user?.id || req.user?._id || 'system'
     });
     
     await bill.save();
@@ -100,7 +100,7 @@ exports.processPayment = async (req, res) => {
       
       // Update table status to available when payment is completed
       if (order) {
-        const Table = require('../models/Table');
+        const Table = require('../models/restaurantModels/Table');
         try {
           const table = await Table.findOneAndUpdate(
             { tableNumber: order.tableNo },
@@ -160,7 +160,7 @@ exports.processSplitPayment = async (req, res) => {
       
       // Update table status to available when payment is completed
       if (order) {
-        const Table = require('../models/Table');
+        const Table = require('../models/restaurantModels/Table');
         try {
           const table = await Table.findOneAndUpdate(
             { tableNumber: order.tableNo },
@@ -198,9 +198,10 @@ exports.getAllBills = async (req, res) => {
     if (paymentMethod) filter.paymentMethod = paymentMethod;
     
     const bills = await Bill.find(filter)
-      .populate('orderId', 'staffName phoneNumber')
-      .populate('cashierId', 'username')
-      .sort({ createdAt: -1 });
+      .populate('orderId', 'staffName customerName tableNo')
+      .select('billNumber tableNo totalAmount paymentStatus paymentMethod createdAt orderId')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(bills);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -211,8 +212,7 @@ exports.getAllBills = async (req, res) => {
 exports.getBillById = async (req, res) => {
   try {
     const bill = await Bill.findById(req.params.id)
-      .populate('orderId')
-      .populate('cashierId', 'username');
+      .populate('orderId');
     if (!bill) return res.status(404).json({ error: 'Bill not found' });
     res.json(bill);
   } catch (error) {
@@ -223,10 +223,9 @@ exports.getBillById = async (req, res) => {
 // Get bill details with items from all KOTs
 exports.getBillDetails = async (req, res) => {
   try {
-    const KOT = require('../models/KOT');
+    const KOT = require('../models/restaurantModels/KOT');
     const bill = await Bill.findById(req.params.id)
-      .populate('orderId')
-      .populate('cashierId', 'username');
+      .populate('orderId');
     
     if (!bill) return res.status(404).json({ error: 'Bill not found' });
     
@@ -255,10 +254,9 @@ exports.getBillDetails = async (req, res) => {
 // Get bill by order ID with items from all KOTs
 exports.getBillByOrderId = async (req, res) => {
   try {
-    const KOT = require('../models/KOT');
+    const KOT = require('../models/restaurantModels/KOT');
     const bill = await Bill.findOne({ orderId: req.params.orderId })
-      .populate('orderId')
-      .populate('cashierId', 'username');
+      .populate('orderId');
     
     if (!bill) return res.status(404).json({ error: 'Bill not found' });
     
@@ -301,7 +299,7 @@ exports.updateBillStatus = async (req, res) => {
       
       // Update table status to available when payment is completed
       if (order) {
-        const Table = require('../models/Table');
+        const Table = require('../models/restaurantModels/Table');
         try {
           const table = await Table.findOneAndUpdate(
             { tableNumber: order.tableNo },
@@ -334,8 +332,7 @@ exports.updateBillStatus = async (req, res) => {
 exports.getBillWithAdvanceDetails = async (req, res) => {
   try {
     const bill = await Bill.findById(req.params.id)
-      .populate('orderId')
-      .populate('cashierId', 'username');
+      .populate('orderId');
     
     if (!bill) return res.status(404).json({ error: 'Bill not found' });
     

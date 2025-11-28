@@ -1,9 +1,9 @@
-const RestaurantOrder = require("../models/RestaurantOrder");
-const Item = require("../models/Items");
-const KOT = require("../models/KOT");
-const Bill = require("../models/Bill");
-const Table = require("../models/Table");
-const NOC = require("../models/NOC");
+const RestaurantOrder = require("../models/restaurantModels/RestaurantOrder");
+const Item = require("../models/restaurantModels/Items");
+const KOT = require("../models/restaurantModels/KOT");
+const Bill = require("../models/restaurantModels/Bill");
+const Table = require("../models/restaurantModels/Table");
+const NOC = require("../models/restaurantModels/NOC");
 
 // Generate KOT number
 const generateKOTNumber = async () => {
@@ -163,35 +163,12 @@ exports.createOrder = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await RestaurantOrder.find()
-      .populate("items.itemId", "name Price category Discount")
-      .populate("createdBy", "name")
-      .sort({ createdAt: -1 });
+      .populate("items.itemId", "name Price")
+      .select('staffName tableNo amount status createdAt items')
+      .sort({ createdAt: -1 })
+      .lean();
     
-    const ordersWithKotItems = await Promise.all(orders.map(async (order) => {
-      const kots = await KOT.find({ orderId: order._id })
-        .populate('items.itemId', 'name Price category');
-      
-      const allItems = [];
-      kots.forEach(kot => {
-        kot.items.forEach(item => {
-          allItems.push({
-            itemName: item.itemName || item.itemId?.name || 'Unknown',
-            price: item.rate || item.itemId?.Price || 0,
-            quantity: item.quantity,
-            total: (item.rate || item.itemId?.Price || 0) * item.quantity,
-            kotNumber: kot.kotNumber
-          });
-        });
-      });
-      
-      return {
-        ...order.toObject(),
-        allKotItems: allItems,
-        kotCount: kots.length
-      };
-    }));
-    
-    res.json(ordersWithKotItems);
+    res.json(orders);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -201,8 +178,7 @@ exports.getAllOrders = async (req, res) => {
 exports.getOrderDetails = async (req, res) => {
   try {
     const order = await RestaurantOrder.findById(req.params.id)
-      .populate('items.itemId', 'name Price category Discount')
-      .populate('createdBy', 'name');
+      .populate('items.itemId', 'name Price category Discount');
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
     const kots = await KOT.find({ orderId: order._id })
@@ -248,9 +224,10 @@ exports.getOrderDetails = async (req, res) => {
 exports.getOrdersByTable = async (req, res) => {
   try {
     const orders = await RestaurantOrder.find({ tableNo: req.params.tableNo })
-      .populate("items.itemId", "name Price category Discount")
-      .populate("createdBy", "name")
-      .sort({ createdAt: -1 });
+      .populate("items.itemId", "name Price")
+      .select('staffName tableNo amount status createdAt items')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(orders);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -391,7 +368,7 @@ exports.transferTable = async (req, res) => {
       fromTable: oldTableNo,
       toTable: newTableNo,
       reason: reason || "Customer request",
-      transferredBy: req.user?.id || req.user?._id,
+      transferredBy: req.user?.id || req.user?._id || 'system',
       transferredAt: new Date(),
     });
 
@@ -431,20 +408,20 @@ exports.transferTable = async (req, res) => {
   }
 };
 
-// Update order status
+// Update order status with live tracking
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const order = await RestaurantOrder.findByIdAndUpdate(
       req.params.id,
-      { status },
+      { status, statusUpdatedAt: new Date() },
       { new: true }
     );
     if (!order) return res.status(404).json({ error: "Order not found" });
     
     // If order is cancelled, also cancel all associated KOTs
     if (status === 'cancelled') {
-      const KOT = require('../models/KOT');
+      const KOT = require('../models/restaurantModels/KOT');
       await KOT.updateMany(
         { orderId: order._id },
         { status: 'cancelled' }
@@ -526,7 +503,7 @@ exports.addTransaction = async (req, res) => {
       amount,
       method,
       billId,
-      processedBy: req.user?.id,
+      processedBy: req.user?.id || 'system',
       processedAt: new Date()
     };
     
@@ -544,8 +521,7 @@ exports.addTransaction = async (req, res) => {
 exports.generateInvoice = async (req, res) => {
   try {
     const order = await RestaurantOrder.findById(req.params.id)
-      .populate('items.itemId', 'name Price category Discount')
-      .populate('createdBy', 'name');
+      .populate('items.itemId', 'name Price category Discount');
     if (!order) return res.status(404).json({ error: 'Order not found' });
     
     // Get all KOTs for this order
