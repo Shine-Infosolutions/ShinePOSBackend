@@ -1,30 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const {
-  createRestaurantRegistration,
-  getAllRestaurantRegistrations,
-  getRestaurantRegistrationById,
-  updateRestaurantRegistration,
-  submitRestaurantRegistration,
-  getMyRegistrations,
-  deleteRestaurantRegistration
-} = require('../../controllers/salesController/restaurantRegistrationController');
+const controller = require('../../controllers/salesController/restaurantRegistrationController');
+const { auth, authorize } = require('../../middleware/auth');
 
-// A. Create Restaurant (status = pending)
-router.post('/', createRestaurantRegistration);
+// Sales Person APIs - Require Authentication + Sales Role
+router.post('/create', auth, authorize('SALES', 'ADMIN'), controller.createRestaurantRegistration);
+router.get('/my-registrations', auth, authorize('SALES', 'ADMIN'), controller.getMyRegistrations);
+router.put('/update/:id', auth, authorize('SALES', 'ADMIN'), controller.updateRestaurantRegistration);
+router.put('/submit/:id', auth, authorize('SALES', 'ADMIN'), controller.submitRestaurantRegistration);
+router.delete('/delete/:id', auth, authorize('SALES', 'ADMIN'), controller.deleteRestaurantRegistration);
 
-// B. Update Restaurant (ONLY pending status)
-router.put('/:id', updateRestaurantRegistration);
-
-// C. Submit Registration (pending → submitted)
-router.patch('/:id/submit', submitRestaurantRegistration);
-
-// D. View My Registrations (pending + submitted)
-router.get('/sales/:salesPersonId', getMyRegistrations);
-
-// Admin routes
-router.get('/', getAllRestaurantRegistrations);
-router.get('/:id', getRestaurantRegistrationById);
-router.delete('/:id', deleteRestaurantRegistration);
+// Admin/Support APIs - Require Admin/Support Role
+router.get('/all', auth, authorize('ADMIN', 'SUPPORT'), controller.getAllRestaurantRegistrations);
+router.get('/:id', auth, authorize('SALES', 'ADMIN', 'SUPPORT'), controller.getRestaurantRegistrationById);
 
 module.exports = router;
