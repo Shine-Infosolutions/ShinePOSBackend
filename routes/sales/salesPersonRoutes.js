@@ -1,20 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const salesPersonController = require('../../controllers/salesController/salesPersonController');
+const { auth, authorize } = require('../../middleware/auth');
 
-// Create SalesPerson
-router.post('/', salesPersonController.createSalesPerson);
+// Sales Person Self Access
+router.get('/my-profile', auth, authorize('SALES'), salesPersonController.getMyProfile);
 
-// Get all SalesPersons
-router.get('/', salesPersonController.getAllSalesPersons);
+// Get SalesPerson by User ID (specific route first)
+router.get('/user/:userId', auth, authorize('ADMIN'), salesPersonController.getSalesPersonByUserId);
 
-// Get SalesPerson by ID
-router.get('/:id', salesPersonController.getSalesPersonById);
+// Admin Only APIs
+router.post('/', auth, authorize('ADMIN'), salesPersonController.createSalesPerson);
+router.get('/', auth, authorize('ADMIN'), salesPersonController.getAllSalesPersons);
+router.put('/:id', auth, authorize('ADMIN'), salesPersonController.updateSalesPerson);
+router.delete('/:id', auth, authorize('ADMIN'), salesPersonController.deleteSalesPerson);
 
-// Update SalesPerson
-router.put('/:id', salesPersonController.updateSalesPerson);
-
-// Delete SalesPerson
-router.delete('/:id', salesPersonController.deleteSalesPerson);
+// Get SalesPerson by ID (general route last)
+router.get('/:id', auth, authorize('ADMIN'), salesPersonController.getSalesPersonById);
 
 module.exports = router;
